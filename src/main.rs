@@ -1,11 +1,9 @@
 use macroquad::prelude::*;
 
-
-
 #[derive(Clone, Copy, Debug)]
 struct Shape {
     extent: f32, // generic: distance from center to edge (radius or half-side)
-    speed: f32, // pixels per second
+    speed: f32,  // pixels per second
     x: f32,
     y: f32,
     collided: bool,
@@ -34,7 +32,13 @@ impl Shape {
 
     fn draw_square(&self, color: Color) {
         let side = self.extent * 2.0;
-        draw_rectangle(self.x - self.extent, self.y - self.extent, side, side, color);
+        draw_rectangle(
+            self.x - self.extent,
+            self.y - self.extent,
+            side,
+            side,
+            color,
+        );
     }
 
     fn collides_with(&self, other: &Shape) -> bool {
@@ -45,7 +49,6 @@ impl Shape {
         distance_squared <= radius_sum * radius_sum
     }
 }
-
 
 #[macroquad::main("My game")]
 async fn main() {
@@ -66,7 +69,7 @@ async fn main() {
     loop {
         let dt = get_frame_time();
 
-        if !game_over{
+        if !game_over {
             clear_background(BLACK);
 
             // Spawn new square with 5% chance each frame
@@ -75,23 +78,23 @@ async fn main() {
                 let extent = size / 2.0;
 
                 squares.push(Shape {
-                    extent: extent,
+                    extent,
                     speed: rand::gen_range(50.0, 150.0),
-                    x : rand::gen_range(extent, screen_width() - extent),
-                    y : -extent,
+                    x: rand::gen_range(extent, screen_width() - extent),
+                    y: -extent,
                     collided: false,
                 });
             };
 
             // Build direction from key states:
             // Right -> +1, Left -> -1, both/none -> 0 (same for up/down).
-            let dir_x = (is_key_down(KeyCode::Right) as i32 - is_key_down(KeyCode::Left) as i32) as f32;
-            let dir_y = (is_key_down(KeyCode::Down) as i32 - is_key_down(KeyCode::Up) as i32) as f32;
+            let dir_x =
+                (is_key_down(KeyCode::Right) as i32 - is_key_down(KeyCode::Left) as i32) as f32;
+            let dir_y =
+                (is_key_down(KeyCode::Down) as i32 - is_key_down(KeyCode::Up) as i32) as f32;
             circle.move_by_speed(dir_x, dir_y, dt);
 
-
-            if is_key_pressed(KeyCode::Space)
-            {
+            if is_key_pressed(KeyCode::Space) {
                 bullets.push(Shape {
                     extent: 5.0,
                     speed: circle.speed * 2.0,
@@ -105,7 +108,6 @@ async fn main() {
             for s in &mut squares {
                 s.move_by(0.0, s.speed * dt);
             }
-
 
             // Update bullets (they go up)
             for s in &mut bullets {
@@ -128,7 +130,6 @@ async fn main() {
             squares.retain(|square| !square.collided);
             bullets.retain(|bullet| !bullet.collided);
 
-
             // Check collisions
             for s in &squares {
                 if circle.collides_with(s) {
@@ -143,8 +144,6 @@ async fn main() {
             for b in &mut bullets {
                 b.draw_circle(GREEN);
             }
-
-
         }
         next_frame().await;
         if game_over && is_key_down(KeyCode::Space) {
@@ -156,6 +155,4 @@ async fn main() {
             game_over = false;
         }
     }
-
 }
-
