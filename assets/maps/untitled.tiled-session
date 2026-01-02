@@ -1,0 +1,69 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "sheet.tsj",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "map,json.tmj": {
+            "scale": 1.7020833333333334,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 191.5299877600979,
+                "y": 160.09791921664623
+            }
+        },
+        "map.json": {
+            "scale": 1.3775,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 240.29038112522687,
+                "y": 159.70961887477313
+            }
+        },
+        "map1.json": {
+            "scale": 1.37,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 206.56934306569343,
+                "y": 162.40875912408762
+            }
+        },
+        "sheet.tsj": {
+            "scaleInDock": 2.7692,
+            "scaleInEditor": 4.44
+        },
+        "sheet.tsx": {
+            "scaleInDock": 2.7692,
+            "scaleInEditor": 4.44
+        }
+    },
+    "last.externalTilesetPath": "/Users/mwieder/Downloads",
+    "last.imagePath": "/Users/mwieder/Downloads",
+    "map.lastUsedFormat": "json",
+    "map.tileHeight": 16,
+    "map.tileWidth": 16,
+    "openFiles": [
+        "sheet.tsj",
+        "map.json",
+        "sheet.tsx"
+    ],
+    "project": "untitled.tiled-project",
+    "recentFiles": [
+        "sheet.tsx",
+        "sheet.tsj",
+        "map.json",
+        "map1.json",
+        "map,json.tmj"
+    ],
+    "tileset.lastUsedFilter": "All Files (*)",
+    "tileset.lastUsedFormat": "json",
+    "tileset.tileSize": {
+        "height": 16,
+        "width": 16
+    }
+}

@@ -23,7 +23,7 @@ struct Enemy {
     alive: bool,
 }
 
-// constants 
+// constants
 
 // Map dimensions (should match Tiled JSON: width/height)
 const MAP_W: usize = 30;
@@ -43,7 +43,7 @@ const ENEMY_H: f32 = 14.0;
 const GRAVITY: f32 = 1200.0;
 const MOVE_SPEED: f32 = 220.0;
 const JUMP_SPEED: f32 = 420.0;
-const ENEMY_SPEED: f32 = 80.0;
+const ENEMY_SPEED: f32 = 40.0;
 
 // Layer name in Tiled
 const TILE_LAYER: &str = "Tile Layer 1";
@@ -179,26 +179,29 @@ fn reset_run(colliders: &[Tile], spawn_points: &[Vec2]) -> (World, Player, Vec<E
 async fn main() {
     // --- load assets ---
     let tileset_texture: Texture2D = load_texture("assets/maps/sheet.png").await.unwrap();
+    // let tileset_player = load_texture("assets/maps/r.png").await.unwrap();
+
     tileset_texture.set_filter(FilterMode::Nearest);
 
-    let map_json = load_string("assets/maps/map.json").await.unwrap();
-    let sheet_tsj = load_string("assets/maps/sheet.tsj").await.unwrap();
+    let map_json: String = load_string("assets/maps/map.json").await.unwrap();
+    let sheet_tsj: String = load_string("assets/maps/sheet.tsj").await.unwrap();
 
-    let textures = &[("sheet.png", tileset_texture)];
-    let external_tilesets = &[("sheet.tsj", sheet_tsj.as_str())];
+    let textures: &[(&str, Texture2D); 1] = &[("sheet.png", tileset_texture)];
+    let external_tilesets: &[(&str, &str); 1] = &[("sheet.tsj", sheet_tsj.as_str())];
 
-    let tiled_map = tiled::load_map(&map_json, textures, external_tilesets).unwrap();
+    let tiled_map: macroquad_tiled::Map =
+        tiled::load_map(&map_json, textures, external_tilesets).unwrap();
 
     // --- debug: discover which tiles are used ---
-    let used = collect_used_tile_ids(&tiled_map);
+    let used: BTreeSet<u32> = collect_used_tile_ids(&tiled_map);
     println!("Used tile ids in {TILE_LAYER}: {:?}", used);
 
     // treat all placed tiles as solid for now.
     let solid_ids: HashSet<u32> = used.into_iter().collect();
 
     // --- build collision grid and spawn points ---
-    let static_colliders = build_static_colliders(&tiled_map, &solid_ids);
-    let spawn_points = find_spawn_points(&static_colliders);
+    let static_colliders: Vec<Tile> = build_static_colliders(&tiled_map, &solid_ids);
+    let spawn_points: Vec<Vec2> = find_spawn_points(&static_colliders);
 
     // --- camera in world-space ---
     let mut world_camera =
@@ -297,6 +300,11 @@ async fn main() {
                 // Debug draw player
                 let p = world.actor_pos(player.collider);
                 draw_rectangle(p.x, p.y, PLAYER_W, PLAYER_H, GREEN);
+                // if player.vel.x >= 0.0 {
+                //     tiled_map.spr("tileset", 0, Rect::new(p.x, p.y, 8.0, 8.0));
+                // } else {
+                //     tiled_map.spr("tileset", 0, Rect::new(p.x + 8.0, p.y, -8.0, 8.0));
+                // }
 
                 // --- enemy movement / AI ---
                 for e in &mut enemies {
