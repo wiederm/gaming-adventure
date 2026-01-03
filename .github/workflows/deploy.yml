@@ -31,6 +31,7 @@ jobs:
         run: |
           mkdir -p ./deploy
           cp ./target/wasm32-unknown-unknown/release/game-v2.wasm ./deploy/
+          cp -r assets/* ./deploy/assets/
           cp index.html ./deploy/
 
       - name: Deploy
