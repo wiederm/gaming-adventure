@@ -97,9 +97,9 @@ async fn main() {
     let mut game_state: GameState = GameState::MainMenu;
 
     // Load the spritesheet .
-    let texture: Texture2D = load_texture("assets/lg.png")
+    let texture: Texture2D = load_texture("assets/ghost.png")
         .await
-        .expect("Failed to load assets/lg.png");
+        .expect("Failed to load assets/ghost.png");
 
     // Pixel-art: avoid blurry scaling.
     texture.set_filter(FilterMode::Nearest);
