@@ -30,6 +30,7 @@ jobs:
       - name: Prepare Deployment Directory
         run: |
           mkdir -p ./deploy
+          mkdir -p ./deploy/assets
           cp ./target/wasm32-unknown-unknown/release/game-v2.wasm ./deploy/
           cp -r assets/* ./deploy/assets/
           cp index.html ./deploy/
