@@ -3,81 +3,55 @@ use macroquad::prelude::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum GameState {
     MainMenu,
-    ExperimentA,
+    Demo,
 }
 
-/// Simple frame-based animation from a spritesheet.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum MoveState {
+    Idle,
+    Walk,
+    Run,
+    Jump,
+    Dash,
+}
+
+/// Sprite animation helper (unchanged conceptually)
 struct SpriteAnim {
     texture: Texture2D,
-    frame_rects: Vec<Rect>,
-    frame_durations: Vec<f32>, // seconds per frame
-    t: f32,                    // accumulated time
-    playing: bool,
+    frames: Vec<Rect>,
+    durations: Vec<f32>,
+    t: f32,
 }
-impl SpriteAnim {
-    fn new(texture: Texture2D, frame_rects: Vec<Rect>, frame_durations: Vec<f32>) -> Self {
-        assert!(
-            frame_rects.len() == frame_durations.len() && !frame_rects.is_empty(),
-            "frame_rects and frame_durations must be same non-zero length"
-        );
 
+impl SpriteAnim {
+    fn new(texture: Texture2D, frames: Vec<Rect>, durations: Vec<f32>) -> Self {
         Self {
             texture,
-            frame_rects,
-            frame_durations,
+            frames,
+            durations,
             t: 0.0,
-            playing: false,
         }
-    }
-
-    fn start(&mut self) {
-        self.playing = true;
-        self.t = 0.0;
-    }
-
-    fn stop(&mut self) {
-        self.playing = false;
-        self.t = 0.0;
-    }
-
-    fn toggle_pause(&mut self) {
-        self.playing = !self.playing;
     }
 
     fn update(&mut self, dt: f32) {
-        if self.playing {
-            self.t += dt;
-        }
+        self.t += dt;
     }
 
-    /// Returns current frame index, looping forever when playing.
-    fn current_frame(&self) -> usize {
-        if !self.playing {
-            return 0;
-        }
-
-        let total: f32 = self.frame_durations.iter().sum();
-        if total <= 0.0 {
-            return 0;
-        }
-
-        // Loop time into [0, total)
+    fn frame_index(&self) -> usize {
+        let total: f32 = self.durations.iter().sum();
         let mut time = self.t % total;
 
-        for (i, d) in self.frame_durations.iter().enumerate() {
+        for (i, d) in self.durations.iter().enumerate() {
             if time < *d {
                 return i;
             }
             time -= *d;
         }
-
         0
     }
 
-    fn draw(&self, pos: Vec2, scale: f32) {
-        let i = self.current_frame();
-        let src = self.frame_rects[i];
-
+    fn draw(&self, pos: Vec2, scale: f32, flip_x: bool) {
+        let src = self.frames[self.frame_index()];
         draw_texture_ex(
             &self.texture,
             pos.x,
@@ -86,36 +60,78 @@ impl SpriteAnim {
             DrawTextureParams {
                 source: Some(src),
                 dest_size: Some(vec2(src.w * scale, src.h * scale)),
+                flip_x,
                 ..Default::default()
             },
         );
     }
 }
 
-#[macroquad::main("My game")]
+/// Holds one animation per movement state
+struct AnimSet {
+    idle: SpriteAnim,
+    walk: SpriteAnim,
+    run: SpriteAnim,
+    jump: SpriteAnim,
+    dash: SpriteAnim,
+}
+
+struct Player {
+    pos: Vec2,
+    vel: Vec2,
+    facing: f32,
+    on_ground: bool,
+    state: MoveState,
+}
+
+fn sheet_frames(frame_count: usize, frame_w: f32, frame_h: f32) -> Vec<Rect> {
+    (0..frame_count)
+        .map(|i| Rect::new(i as f32 * frame_w, 0.0, frame_w, frame_h))
+        .collect()
+}
+
+#[macroquad::main("Sprite Demo")]
 async fn main() {
-    let mut game_state: GameState = GameState::MainMenu;
+    let mut game_state = GameState::MainMenu;
 
-    // Load the spritesheet .
-    let texture: Texture2D = load_texture("assets/ghost.png")
+    // === Load sprite sheets ===
+    let idle_tex = load_texture("assets/idle.png")
         .await
-        .expect("Failed to load assets/ghost.png");
+        .expect("Failed to load idle.png");
+    let walk_tex = load_texture("assets/idle.png")
+        .await
+        .expect("Failed to load walk.png");
+    let run_tex = load_texture("assets/idle.png")
+        .await
+        .expect("Failed to load run.png");
+    let jump_tex = load_texture("assets/idle.png")
+        .await
+        .expect("Failed to load jump.png");
+    let dash_tex = load_texture("assets/idle.png")
+        .await
+        .expect("Failed to load dash.png");
+    for t in [&idle_tex, &walk_tex, &run_tex, &jump_tex, &dash_tex] {
+        t.set_filter(FilterMode::Nearest);
+    }
 
-    // Pixel-art: avoid blurry scaling.
-    texture.set_filter(FilterMode::Nearest);
+    let mut anims = AnimSet {
+        idle: SpriteAnim::new(idle_tex, sheet_frames(5, 32.0, 32.0), vec![0.2; 5]),
+        walk: SpriteAnim::new(walk_tex, sheet_frames(4, 32.0, 32.0), vec![0.12; 4]),
+        run: SpriteAnim::new(run_tex, sheet_frames(6, 32.0, 32.0), vec![0.08; 6]),
+        jump: SpriteAnim::new(jump_tex, sheet_frames(4, 32.0, 32.0), vec![0.1; 4]),
+        dash: SpriteAnim::new(dash_tex, sheet_frames(3, 32.0, 32.0), vec![0.06; 3]),
+    };
 
-    // 5 frames, each 32x32, x offsets: 0, 32, 64, 96, 128 (all y=0).
-    let frame_rects = vec![
-        Rect::new(0.0, 0.0, 32.0, 32.0),
-        Rect::new(32.0, 0.0, 32.0, 32.0),
-        Rect::new(64.0, 0.0, 32.0, 32.0),
-        Rect::new(96.0, 0.0, 32.0, 32.0),
-        Rect::new(128.0, 0.0, 32.0, 32.0),
-    ];
-    // duration: 100ms each -> 0.1s each
-    let frame_durations = vec![0.1; 5];
+    let scale = 6.0;
+    let ground_y = screen_height() * 0.75 - 32.0 * scale;
 
-    let mut anim = SpriteAnim::new(texture, frame_rects, frame_durations);
+    let mut player = Player {
+        pos: vec2(screen_width() * 0.5, ground_y),
+        vel: vec2(0.0, 0.0),
+        facing: 1.0,
+        on_ground: true,
+        state: MoveState::Idle,
+    };
 
     loop {
         let dt = get_frame_time();
@@ -123,56 +139,110 @@ async fn main() {
 
         match game_state {
             GameState::MainMenu => {
-                if is_key_pressed(KeyCode::A) {
-                    game_state = GameState::ExperimentA;
-                    anim.stop(); // reset each time you enter
+                draw_text(
+                    "Sprite demo\nPress ENTER",
+                    screen_width() * 0.5 - 180.0,
+                    screen_height() * 0.5,
+                    32.0,
+                    WHITE,
+                );
+
+                if is_key_pressed(KeyCode::Enter) {
+                    game_state = GameState::Demo;
                 }
-                if is_key_pressed(KeyCode::Escape) {
-                    std::process::exit(0);
+            }
+
+            GameState::Demo => {
+                // === Input ===
+                if is_key_down(KeyCode::Left) {
+                    player.facing = -1.0;
+                }
+                if is_key_down(KeyCode::Right) {
+                    player.facing = 1.0;
                 }
 
-                draw_text(
-                    "Press A to visualize the animation. Escape to quit.",
-                    screen_width() / 2.0 - 400.0,
-                    screen_height() / 2.0,
-                    30.0,
-                    WHITE,
-                );
-            }
-            GameState::ExperimentA => {
-                draw_text(
-                    "ENTER: start  |  SPACE: pause/resume  |  R: reset  |  ESC: back",
-                    20.0,
-                    40.0,
-                    26.0,
-                    WHITE,
-                );
-                if is_key_pressed(KeyCode::Escape) {
-                    game_state = GameState::MainMenu;
+                if is_key_pressed(KeyCode::I) {
+                    player.state = MoveState::Idle;
                 }
-                if is_key_pressed(KeyCode::Enter) {
-                    anim.start();
-                }
-                if is_key_pressed(KeyCode::Space) {
-                    anim.toggle_pause();
+                if is_key_pressed(KeyCode::W) {
+                    player.state = MoveState::Walk;
                 }
                 if is_key_pressed(KeyCode::R) {
-                    anim.start();
+                    player.state = MoveState::Run;
+                }
+                if is_key_pressed(KeyCode::J) && player.on_ground {
+                    player.state = MoveState::Jump;
+                    player.vel.y = -900.0;
+                    player.on_ground = false;
+                }
+                if is_key_pressed(KeyCode::D) {
+                    player.state = MoveState::Dash;
+                    player.vel.x = player.facing * 1200.0;
                 }
 
-                // Update + draw
+                // === Physics ===
+                let gravity = 2200.0;
+
+                match player.state {
+                    MoveState::Idle => player.vel.x = 0.0,
+                    MoveState::Walk => {
+                        player.vel.x = player.facing * dt * 10_000.;
+                        if player.pos.x > screen_width() {
+                            player.pos.x = screen_width() * 0.5;
+                        };
+                    }
+                    MoveState::Run => player.vel.x = player.facing * dt * 200.,
+                    MoveState::Jump => player.vel.x = player.facing * dt * 150.,
+                    MoveState::Dash => {
+                        player.vel.x *= 0.88;
+                        if player.vel.x.abs() < 80.0 {
+                            player.state = MoveState::Idle;
+                        }
+                    }
+                }
+
+                if !player.on_ground {
+                    player.vel.y += gravity * dt;
+                }
+
+                player.pos += player.vel * dt;
+
+                if player.pos.y >= ground_y {
+                    player.pos.y = ground_y;
+                    player.vel.y = 0.0;
+                    player.on_ground = true;
+                    if player.state == MoveState::Jump {
+                        player.state = MoveState::Idle;
+                    }
+                }
+
+                // === Animation ===
+                let anim = match player.state {
+                    MoveState::Idle => &mut anims.idle,
+                    MoveState::Walk => &mut anims.walk,
+                    MoveState::Run => &mut anims.run,
+                    MoveState::Jump => &mut anims.jump,
+                    MoveState::Dash => &mut anims.dash,
+                };
+
                 anim.update(dt);
+                anim.draw(player.pos, scale, player.facing < 0.0);
 
-                let scale = 6.0;
-                let sprite_w = 32.0 * scale;
-                let sprite_h = 32.0 * scale;
-
-                let pos = vec2(
-                    screen_width() * 0.5 - sprite_w * 0.5,
-                    screen_height() * 0.5 - sprite_h * 0.5,
+                // === UI ===
+                draw_text(
+                    "I:Idle W:Walk R:Run J:Jump D:Dash  ← →",
+                    20.0,
+                    30.0,
+                    22.0,
+                    WHITE,
                 );
-
-                anim.draw(pos, scale);
+                draw_text(
+                    &format!("State: {:?}", player.state),
+                    20.0,
+                    60.0,
+                    22.0,
+                    YELLOW,
+                );
             }
         }
 
