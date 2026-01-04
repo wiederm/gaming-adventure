@@ -15,6 +15,15 @@ enum MoveState {
     Dash,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum JumpPhase {
+    Takeoff,
+    Rising,
+    Apex,
+    Falling,
+    Landing,
+}
+
 /// Sprite animation helper (unchanged conceptually)
 struct SpriteAnim {
     texture: Texture2D,
