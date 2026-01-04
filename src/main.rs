@@ -95,19 +95,19 @@ async fn main() {
     let mut game_state = GameState::MainMenu;
 
     // === Load sprite sheets ===
-    let idle_tex = load_texture("assets/idle.png")
+    let idle_tex = load_texture("assets/idle1.png")
         .await
-        .expect("Failed to load idle.png");
-    let walk_tex = load_texture("assets/idle.png")
+        .expect("Failed to load idle1.png");
+    let walk_tex = load_texture("assets/idle1.png")
         .await
         .expect("Failed to load walk.png");
-    let run_tex = load_texture("assets/idle.png")
+    let run_tex = load_texture("assets/idle1.png")
         .await
         .expect("Failed to load run.png");
-    let jump_tex = load_texture("assets/idle.png")
+    let jump_tex = load_texture("assets/idle1.png")
         .await
         .expect("Failed to load jump.png");
-    let dash_tex = load_texture("assets/idle.png")
+    let dash_tex = load_texture("assets/idle1.png")
         .await
         .expect("Failed to load dash.png");
     for t in [&idle_tex, &walk_tex, &run_tex, &jump_tex, &dash_tex] {
@@ -117,7 +117,7 @@ async fn main() {
     let mut anims = AnimSet {
         idle: SpriteAnim::new(idle_tex, sheet_frames(5, 32.0, 32.0), vec![0.2; 5]),
         walk: SpriteAnim::new(walk_tex, sheet_frames(4, 32.0, 32.0), vec![0.12; 4]),
-        run: SpriteAnim::new(run_tex, sheet_frames(6, 32.0, 32.0), vec![0.08; 6]),
+        run: SpriteAnim::new(run_tex, sheet_frames(4, 32.0, 32.0), vec![0.08; 4]),
         jump: SpriteAnim::new(jump_tex, sheet_frames(4, 32.0, 32.0), vec![0.1; 4]),
         dash: SpriteAnim::new(dash_tex, sheet_frames(3, 32.0, 32.0), vec![0.06; 3]),
     };
@@ -191,7 +191,7 @@ async fn main() {
                             player.pos.x = screen_width() * 0.5;
                         };
                     }
-                    MoveState::Run => player.vel.x = player.facing * dt * 200.,
+                    MoveState::Run => player.vel.x = player.facing * dt * 10_000. * 2.,
                     MoveState::Jump => player.vel.x = player.facing * dt * 150.,
                     MoveState::Dash => {
                         player.vel.x *= 0.88;
