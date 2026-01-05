@@ -235,8 +235,7 @@ async fn main() {
         t.set_filter(FilterMode::Nearest);
     }
 
-    // Assumptions: each sheet is 1 row, frames are 32x32.
-    // Adjust counts/durations per your actual sheets.
+    // each sheet is 1 row, frames are 32x32.
     let mut anims = AnimSet {
         idle: SpriteAnim::new(
             idle_tex,
@@ -345,7 +344,7 @@ async fn main() {
                     player.ground_mode = MoveState::Idle;
                     player.state = MoveState::Idle;
                     prev_anim = AnimId::Idle;
-                    // restart all so you see consistent starts
+                    // restart all for consistency
                     anims.idle.restart();
                     anims.walk.restart();
                     anims.run.restart();
@@ -429,7 +428,7 @@ async fn main() {
                     player.jump_phase = JumpPhase::Takeoff;
                     player.on_ground = false;
 
-                    // Variable jump height can be added by cutting vy on key release (see below).
+                    // TODO: Variable jump height can be added by cutting vy on key release.
                     player.vel.y = -900.0;
 
                     anims.jump_takeoff.restart();
@@ -443,7 +442,7 @@ async fn main() {
                 }
 
                 // Optional: variable jump height (short hop vs full jump)
-                // If you want a shorter jump when releasing J early:
+                // for shorter jump release J early!
                 if is_key_released(KeyCode::J)
                     && player.state == MoveState::Jump
                     && player.vel.y < 0.0
@@ -501,12 +500,12 @@ async fn main() {
                 // --- Screen wrap (horizontal) -----------------------------------
                 let screen_w = screen_width();
 
-                // If sprite fully exits right → appear on left
+                // If sprite fully exits right -> appear on left
                 if player.pos.x > screen_w {
                     player.pos.x = -sprite_w;
                 }
 
-                // If sprite fully exits left → appear on right
+                // If sprite fully exits left -> appear on right
                 if player.pos.x + sprite_w < 0.0 {
                     player.pos.x = screen_w;
                 }
@@ -524,7 +523,7 @@ async fn main() {
                     player.on_ground = false;
                 }
 
-                // ---- Jump phase transitions (semantic) ----------------------------
+                // ---- Jump phase transitions----------------------------
                 if player.state == MoveState::Jump {
                     // If we just landed: play Landing once
                     if just_landed {
